@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="eb7f71c6-3348-42a6-b0d4-51a1b6bdfab0" name="huaweiyun" url="http://122.112.255.126">
+        <fileTransfer host="122.112.255.126" port="22" rootFolder="/etl/etldata/script/python_script" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
