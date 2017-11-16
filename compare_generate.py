@@ -958,23 +958,24 @@ class CompareObj(object):
         找到两次变更中新增的表和删除的表
         """
         if config.SKIP_SCHEMA_LIST:
-            skip_schema_str = ' AND trim(SRC_STM_ID) not in (%s)' %(','.join(["'%s'" %i for i in config.SKIP_SCHEMA_LIST]))
+            skip_schema_str = ' AND trim(SRC_STM_ID) not in (%s)' %(','.join(["'%s'" %i.upper() for i in config.SKIP_SCHEMA_LIST]))
         else:
             skip_schema_str = ''
 
         old_tablelist = []
+
         if not src_name and not table_list: ## 若都为空
             sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL WHERE CHANGE_DATE={0} AND COMMENT NOT LIKE '%停止下发%'{skip_schema_str}".format(olddate,skip_schema_str=skip_schema_str)
             if config.isLinuxSystem():
-                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(olddate,skip_schema_str=skip_schema_str)
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP <> 'D' AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(olddate,skip_schema_str=skip_schema_str)
         elif src_name and not table_list:  ## 值存在模式名
             sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL WHERE CHANGE_DATE={0} AND TRIM(SRC_STM_ID)='{1}' AND COMMENT NOT LIKE '%停止下发%'{skip_schema_str}".format(olddate, src_name,skip_schema_str=skip_schema_str)
             if config.isLinuxSystem():
-                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND TRIM(SRC_STM_ID)='{1}' AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(olddate, src_name,skip_schema_str=skip_schema_str)
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP <> 'D' AND TRIM(SRC_STM_ID)='{1}' AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(olddate, src_name,skip_schema_str=skip_schema_str)
         elif src_name and table_list:
             sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL WHERE CHANGE_DATE={0} AND TRIM(SRC_STM_ID)='{1}' AND TRIM(TAB_CODE) IN ({2}) AND COMMENT NOT LIKE '%停止下发%'{skip_schema_str}".format(olddate, src_name, ','.join(["\'%s\'" %x for x in table_list]),skip_schema_str=skip_schema_str)
             if config.isLinuxSystem():
-                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND TRIM(SRC_STM_ID)='{1}' AND TRIM(TAB_CODE) IN ({2}) AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(olddate, src_name, ','.join(["\'%s\'" %x for x in table_list]), skip_schema_str=skip_schema_str)
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP <> 'D' AND TRIM(SRC_STM_ID)='{1}' AND TRIM(TAB_CODE) IN ({2}) AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(olddate, src_name, ','.join(["\'%s\'" %x for x in table_list]), skip_schema_str=skip_schema_str)
         else:
             self._muti_outStream(u"异常:模式名为空且表名不为空")
             return -1, u'异常:模式名为空且表名不为空'
@@ -993,15 +994,15 @@ class CompareObj(object):
         if not src_name and not table_list: ## 若都为空
             sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL WHERE CHANGE_DATE={0} AND COMMENT NOT LIKE '%停止下发%'{skip_schema_str}".format(newdate, skip_schema_str=skip_schema_str)
             if config.isLinuxSystem():
-                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(newdate, skip_schema_str=skip_schema_str)
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP <> 'D' AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(newdate, skip_schema_str=skip_schema_str)
         elif src_name and not table_list:  ## 值存在模式名
             sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL WHERE CHANGE_DATE={0} AND TRIM(SRC_STM_ID)='{1}' AND COMMENT NOT LIKE '%停止下发%'{skip_schema_str}".format(newdate, src_name, skip_schema_str=skip_schema_str)
             if config.isLinuxSystem():
-                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND TRIM(SRC_STM_ID)='{1}' AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(newdate, src_name, skip_schema_str=skip_schema_str)
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP <> 'D' AND TRIM(SRC_STM_ID)='{1}' AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(newdate, src_name, skip_schema_str=skip_schema_str)
         elif src_name and table_list:
             sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL WHERE CHANGE_DATE={0} AND TRIM(SRC_STM_ID)='{1}' AND TRIM(TAB_CODE) IN ({2}) AND COMMENT NOT LIKE '%停止下发%'{skip_schema_str}".format(newdate, src_name, ','.join(["\'%s\'" %x for x in table_list]), skip_schema_str=skip_schema_str)
             if config.isLinuxSystem():
-                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND TRIM(SRC_STM_ID)='{1}' AND TRIM(TAB_CODE) IN ({2}) AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(newdate, src_name, ','.join(["\'%s\'" %x for x in table_list]), skip_schema_str=skip_schema_str)
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP <> 'D' AND TRIM(SRC_STM_ID)='{1}' AND TRIM(TAB_CODE) IN ({2}) AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(newdate, src_name, ','.join(["\'%s\'" %x for x in table_list]), skip_schema_str=skip_schema_str)
         else:
             self._muti_outStream(u"异常:模式名为空且表名不为空")
             return -1, u'异常:模式名为空且表名不为空'
@@ -1015,8 +1016,31 @@ class CompareObj(object):
         new_set = set(new_tablelist)
 
         add_set = new_set - old_set
-        del_set = old_set - new_set
+
         common_set = old_set & new_set
+
+        del_tablelist = []
+        if config.isLinuxSystem():
+            if not src_name and not table_list:  ## 若都为空
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP = 'D' AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(
+                    newdate, skip_schema_str=skip_schema_str)
+            elif src_name and not table_list:  ## 值存在模式名
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP = 'D' AND TRIM(SRC_STM_ID)='{1}' AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(
+                    newdate, src_name, skip_schema_str=skip_schema_str)
+            elif src_name and table_list:
+                sql = "SELECT DISTINCT TRIM(SRC_STM_ID)||'.'||TRIM(TAB_CODE) FROM DSA.ORGIN_TABLE_DETAIL_T WHERE CHANGE_DATE={0} AND ALT_STS_TP = 'D' AND TRIM(SRC_STM_ID)='{1}' AND TRIM(TAB_CODE) IN ({2}) AND (SOURCE_TYPE = '0' OR (SOURCE_TYPE='1' AND IS_DW_T_F='1')){skip_schema_str}".format(
+                    newdate, src_name, ','.join(["\'%s\'" % x for x in table_list]),
+                    skip_schema_str=skip_schema_str)
+            else:
+                self._muti_outStream(u"异常:模式名为空且表名不为空")
+                return -1, u'异常:模式名为空且表名不为空'
+            rows = self._getResultList(sql)
+
+            for row in rows:
+                del_tablelist.append(row[0])
+            del_set = set(del_tablelist)
+        else:
+            del_set = old_set - new_set
 
         if add_set:
             self._muti_outStream(u"新增表: %s\n\n" % ','.join(add_set))
@@ -1666,9 +1690,9 @@ class CompareObj(object):
 
             self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('UNCOMPRESS_INIT','DAY','CMD','L_ODSLD','uncompress_init.sh','$dateid','5','1',null,null,null,null,'UNCOMPRESS_INIT','Y',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('FTP_DOWNLOAD_INIT','DAY','CMD','L_ODSLD','ftp_all_file.sh','%s %s %s /etl/etldata/input/init %sODS/ALL/$dateid','5','1',null,null,null,null,'FTP_DOWNLOAD_INIT','Y',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %(config.distribute_server_ip, config.distribute_server_path, config.FTP_USER, config.FTP_PWD, config.IP))
+            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('FTP_DOWNLOAD_INIT','DAY','CMD','L_ODSLD','ftp_all_file.sh','%s %s %s /etl/etldata/input/init %sODS/ALL/$dateid','5','1',null,null,null,null,'FTP_DOWNLOAD_INIT','Y',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %(config.distribute_server_ip, config.FTP_USER, config.FTP_PWD, config.distribute_server_path, config.IP))
 
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('ODS_DONE','DAY','CMD','L_ODSLD','ods_done,sh','','5','1',null,null,null,null,'ODS_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
+            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('ODS_DONE','DAY','CMD','L_ODSLD','ods_done.sh','','5','1',null,null,null,null,'ODS_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
             self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('ALL_DONE','DAY','CMD','L_ODSLD','all_done.sh','','5','1',null,null,null,null,'ALL_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
@@ -1678,20 +1702,40 @@ class CompareObj(object):
 
             self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('BRUSH_JOBS_LINSHI','DAY','CMD','L_ODSLD','brush_jobs.sh','$dateid','5','1',null,null,null,null,'BRUSH_JOBS_LINSHI','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('AUTO_ALTER_ODS_LINSHI','DAY','CMD','L_ODSLD','auto_alter_ods.sh','$dateid','5','1',null,null,null,null,'AUTO_ALTER_ODS_LINSHI','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
+            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('AUTO_ALTER_ODS_LINSHI','DAY','CMD','L_ODSLD','auto_alter_ods.sh','$dateid','5','1',null,null,null,null,'AUTO_ALTER_ODS_LINSHI','X',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('UNCOMPRESS_INIT','FTP_DOWNLOAD_INIT',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('ALL_DONE','ODS_DONE',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('DQ_CHK_GL_BAL','ODS_DONE',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('ALL_DONE','DQ_CHK_GL_BAL',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('JOBSCHED_UPDATE','ALL_DONE',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('JOB_LOG_UPDATE','ALL_DONE',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('TERMLY_DATA_CLEAR','ALL_DONE',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('AUTO_ALTER_ODS_LINSHI','ALL_DONE',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('BRUSH_JOBS_LINSHI','JOB_LOG_UPDATE',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('BRUSH_JOBS_LINSHI','JOBSCHED_UPDATE',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('BRUSH_JOBS_LINSHI','TERMLY_DATA_CLEAR',null,CURRENT TIMESTAMP);\n")
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_SEQ (JOB_NM,PRE_JOB,SEQ_TY,PPN_TSTMP) VALUES ('BRUSH_JOBS_LINSHI','AUTO_ALTER_ODS_LINSHI',null,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write("insert into etl.job_metadata (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) values ('TERMLY_DATA_CLEAR','DAY','CMD','L_ODSLD','termly_data_clear.sh','$dateid','5','1',null,null,null,null,'TERMLY_DATA_CLEAR','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
+
+            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('SMY_DONE','DAY','CMD','L_ODSLD','smy_done.sh','','5','1',null,null,null,null,'SMY_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
+
+            self.job_schedule_file.write("insert into etl.job_metadata (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) values ('DQ_ODS_GL_BAL_CHK','DAY','SP','L_SMY','DQ.ODS_GL_BAL_CHK','EDW|$dateid|','5','1',null,null,null,null,'DQ_ODS_GL_BAL_CHK','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
+
+            self.job_schedule_file.write(
+                "update etl.job_metadata set init_flag ='N' WHERE INIT_FLAG ='W';\n")
+            self.job_schedule_file.write(
+                "update etl.job_metadata set init_flag ='Y' WHERE JOB_NM LIKE '%_INIT' and init_flag <>'X' and init_flag <> 'Y';\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('ALL_DONE','ODS_DONE',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('ALL_DONE','DQ_ODS_GL_BAL_CHK',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('ALL_DONE','SMY_DONE',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('AUTO_ALTER_ODS_LINSHI','JOBSCHED_UPDATE',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('BRUSH_JOBS_LINSHI','AUTO_ALTER_ODS_LINSHI',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('BRUSH_JOBS_LINSHI','CLEAR_JOB_LOG',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('CLEAR_JOB_LOG','ALL_DONE',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('DQ_ODS_GL_BAL_CHK','ODS_DONE',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('JOBSCHED_UPDATE','ALL_DONE',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('TERMLY_DATA_CLEAR','BRUSH_JOBS_LINSHI',NULL,CURRENT TIMESTAMP);\n")
+            self.job_schedule_file.write(
+                "INSERT INTO ETL.JOB_SEQ VALUES ('UNCOMPRESS_INIT','FTP_DOWNLOAD_INIT',NULL,CURRENT TIMESTAMP);\n")
 
     @get_return_data
     def main(self, input_dict):
