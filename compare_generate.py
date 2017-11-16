@@ -1588,7 +1588,7 @@ class CompareObj(object):
         notelist = glob.glob(config.all_package_path + input_date + '*')
         if not notelist:
             self.compare_log_file.write('无说明文件, 无数据修复')
-            return
+
         else:
             if os.path.exists(config.all_package_path + input_date + '全量包说明'):
                 with open(config.all_package_path + input_date + '全量包说明', 'r') as f:

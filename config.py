@@ -12,7 +12,7 @@ def isLinuxSystem():
     return 'Linux' in platform.system()
 
 # 软件版本
-software_version=2.0
+software_version=2.1
 
 # 数据库配置
 edw_dsn = 'edw'
