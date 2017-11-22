@@ -95,7 +95,7 @@ def execute(date, file_name, guid):
 
                 cursor_dwmm.execute(logSql)
 
-                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_RL_TBL_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=tablename)
+                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_DW_T_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=tablename)
 
                 cursor_dwmm.execute(uptTableSql)
 
@@ -156,7 +156,7 @@ def execute(date, file_name, guid):
                 cursor_dwmm.execute(logSql)
                 execute_logFile.write(logSql+'\n')
 
-                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_RL_TBL_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=tablename)
+                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_DW_T_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=tablename)
 
                 cursor_dwmm.execute(uptTableSql)
 
@@ -194,7 +194,7 @@ def execute(date, file_name, guid):
                 execute_logFile.write(logSql+'\n')
                 cursor_dwmm.execute(logSql)
 
-                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_RL_TBL_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=table_name)
+                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_DW_T_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=table_name)
 
                 cursor_dwmm.execute(uptTableSql)
 
@@ -233,7 +233,7 @@ def execute(date, file_name, guid):
                 execute_logFile.write(logSql+'\n')
                 cursor_dwmm.execute(logSql)
 
-                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_RL_TBL_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=table_name)
+                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_DW_T_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=table_name)
 
                 cursor_dwmm.execute(uptTableSql)
 
@@ -271,7 +271,7 @@ def execute(date, file_name, guid):
                 execute_logFile.write(logSql + '\n')
                 cursor_dwmm.execute(logSql)
 
-                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_RL_TBL_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(
+                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_DW_T_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(
                     date=date, syscode=syscode, tablename=tablename)
 
                 cursor_dwmm.execute(uptTableSql)
