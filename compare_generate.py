@@ -1692,9 +1692,9 @@ class CompareObj(object):
 
             self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('FTP_DOWNLOAD_INIT','DAY','CMD','L_ODSLD','ftp_all_file.sh','%s %s %s /etl/etldata/input/init %sODS/ALL/$dateid','5','1',null,null,null,null,'FTP_DOWNLOAD_INIT','Y',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %(config.distribute_server_ip, config.FTP_USER, config.FTP_PWD, config.distribute_server_path, config.IP))
 
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('ODS_DONE','DAY','CMD','L_ODSLD','ods_done.sh','','5','1',null,null,null,null,'ODS_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
+            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('ODS_DONE','DAY','SQL','L_ODS','ODS_DONE.SQL','EDW /etl/etldata/script/odssql','5','1',null,null,null,null,'ODS_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('ALL_DONE','DAY','CMD','L_ODSLD','all_done.sh','','5','1',null,null,null,null,'ALL_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
+            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('ALL_DONE','DAY','SQL','L_ODS','ALL_DONE.SQL','EDW /etl/etldata/script/odssql','5','1',null,null,null,null,'ALL_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
             self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('JOBSCHED_UPDATE','DAY','CMD','L_ODSLD','jobsched_update.sh','$dateid','5','1',null,null,null,null,'JOBSCHED_UPDATE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
@@ -1706,7 +1706,7 @@ class CompareObj(object):
 
             self.job_schedule_file.write("insert into etl.job_metadata (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) values ('TERMLY_DATA_CLEAR','DAY','CMD','L_ODSLD','termly_data_clear.sh','$dateid','5','1',null,null,null,null,'TERMLY_DATA_CLEAR','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('SMY_DONE','DAY','CMD','L_ODSLD','smy_done.sh','','5','1',null,null,null,null,'SMY_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
+            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) VALUES ('SMY_DONE','DAY','SQL','L_ODS','SMY_DONE.SQL','EDW /etl/etldata/script/odssql','5','1',null,null,null,null,'SMY_DONE','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
             self.job_schedule_file.write("insert into etl.job_metadata (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,PLD_ST_DT,PLD_ST_TM,EXP_ED_DT,EXP_ED_TM,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,MAP_RULE_SET_ID,RSPL_PRT_ID,RSPL_PRT_NM,SCHD_ENGIN_IP) values ('DQ_ODS_GL_BAL_CHK','DAY','SP','L_SMY','DQ.ODS_GL_BAL_CHK','EDW|$dateid|','5','1',null,null,null,null,'DQ_ODS_GL_BAL_CHK','N',current timestamp,'1','1','ODS','',null,null,null,'%s');\n" %config.IP)
 
@@ -1736,6 +1736,16 @@ class CompareObj(object):
                 "INSERT INTO ETL.JOB_SEQ VALUES ('TERMLY_DATA_CLEAR','BRUSH_JOBS_LINSHI',NULL,CURRENT TIMESTAMP);\n")
             self.job_schedule_file.write(
                 "INSERT INTO ETL.JOB_SEQ VALUES ('UNCOMPRESS_INIT','FTP_DOWNLOAD_INIT',NULL,CURRENT TIMESTAMP);\n")
+
+            if not os.path.exists('/etl/etldata/script/odssql/ODS_DONE.SQL'):
+                with open('/etl/etldata/script/odssql/ODS_DONE.SQL','w') as f:
+                    pass
+            if not os.path.exists('/etl/etldata/script/odssql/ALL_DONE.SQL'):
+                with open('/etl/etldata/script/odssql/ALL_DONE.SQL','w') as f:
+                    pass
+            if not os.path.exists('/etl/etldata/script/odssql/SMY_DONE.SQL'):
+                with open('/etl/etldata/script/odssql/SMY_DONE.SQL','w') as f:
+                    pass
 
     @get_return_data
     def main(self, input_dict):
@@ -1771,6 +1781,7 @@ class CompareObj(object):
             # 初始化生成文件
             self._init_log_file(date_list[1])
             print(date_list)
+            print("------------------------flag%s: " %flag)
             self._muti_outStream(u"输入日期:%s,%s\n" %(date_list[0], date_list[1]))
 
             if table_name:
@@ -1782,11 +1793,6 @@ class CompareObj(object):
 
             self._muti_outStream(u"时间: {date}  系统名: {srcName}  表名: {tableName}\n".format(date=date_list[1], srcName=src_name, tableName=table_name))
             self.read_me_file.write(u"时间: {date}  系统名: {srcName}  表名: {tableName}\n".format(date=date_list[1], srcName=src_name, tableName=table_name))
-
-            '''
-                步骤0: 若只输入日期则调度新增, 相当于初始化新增调度
-            '''
-            self.deal_init_job(src_name, table_name, flag)
 
             '''
                 步骤一: 找到新增的schema
@@ -1846,6 +1852,11 @@ class CompareObj(object):
             if self.influencedJoblist:
                 self._muti_outStream(u"受影响的作业有 %s\n" %(','.join(self.influencedJoblist)))
                 self.read_me_file.write(u"受影响的作业有 %s\n" %(','.join(self.influencedJoblist)))
+
+            '''
+               步骤0: 若只输入日期则调度新增, 相当于初始化新增调度
+           '''
+            self.deal_init_job(src_name, table_name, flag)
 
             # self.read_me_file.close()
 
