@@ -12,7 +12,7 @@ def isLinuxSystem():
     return 'Linux' in platform.system()
 
 # 软件版本
-software_version=2.4
+software_version=2.5
 
 # 数据库配置
 edw_dsn = 'edw'
@@ -53,7 +53,7 @@ his_log_encoding = 'gb18030'
 alter_table_encoding = 'gb18030'
 
 # 是否开启全量检查
-CHECK_DISTRIBUTE_ALL_FLAG = True
+CHECK_DISTRIBUTE_ALL_FLAG = False
 
 # python版本
 VERSION = sys.version_info.major

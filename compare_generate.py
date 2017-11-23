@@ -829,7 +829,7 @@ class CompareObj(object):
 
                 f.write("DELETE FROM {0} WHERE NEW_JOB_SEQ_ID= (SELECT  JOB_SEQ_ID FROM ETL.JOB_LOG WHERE TO_CHAR(DATA_PRD,'yyyymmdd')='{1}' AND JOB_NM ='AP_ODS_{2}');\n".format(his_tablename, input_date, table.replace('.', '_')))
 
-                f.write("DROP TABLE DELTA.{0}_YATOPUPDATE\n\n".format(table.replace('.', '_')))
+                f.write("DROP TABLE DELTA.{0}_YATOPUPDATE;\n\n".format(table.replace('.', '_')))
                 f.write("CREATE TABLE DELTA.{0}_YATOPUPDATE LIKE DELTA.{0};\n".format(table.replace('.', '_')))
 
                 f.write("LOAD CLIENT FROM /etl/etldata/input/init/{0}/{1}_{0} of del replace into DELTA.{1}_YATOPUPDATE;\n".format(input_date, table.replace('.', '_')))
@@ -877,7 +877,7 @@ class CompareObj(object):
 
             sql = "DELETE FROM {0} WHERE NEW_JOB_SEQ_ID= (SELECT  JOB_SEQ_ID FROM ETL.JOB_LOG WHERE TO_CHAR(DATA_PRD,'yyyymmdd')='{1}' AND JOB_NM ='AP_ODS_{2}');\n".format(his_tablename, input_date, table.replace('.', '_'))
             f.write(sql)
-            f.write("DROP TABLE DELTA.{0}_YATOPUPDATE\n\n".format(table.replace('.', '_')))
+            f.write("DROP TABLE DELTA.{0}_YATOPUPDATE;\n\n".format(table.replace('.', '_')))
 
             sql = "CREATE TABLE DELTA.{0}_YATOPUPDATE LIKE DELTA.{0};\n".format(table.replace('.', '_'))
             f.write(sql)
@@ -1134,6 +1134,84 @@ class CompareObj(object):
             self.alter_table_file.write('-- <end>\n')
             return
 
+        if is_change_column_property_flag == 2:
+            self.generate_ddl(table, type='delta', input_date=newdate)
+            self.generate_ddl(table, type='ods', input_date=newdate)
+            self.generate_ddl(table, type='odshis', input_date=newdate)
+
+            self.alter_table_file.write('-- <change primary column type>\n')
+            self.alter_table_file.write("drop table {delta_tablename};\n".format(delta_tablename=delta_tablename))
+            self.alter_table_file.write(
+                "rename table {tablename} to {tablenm}_{newdate};\n".format(tablename=table, tablenm=tablenm,
+                                                                            newdate=newdate))
+            self.alter_table_file.write(
+                "rename table {his_tablename} to {syscode}_{tablenm}_{newdate};\n".format(his_tablename=his_tablename,
+                                                                                          syscode=syscode,
+                                                                                          tablenm=tablenm,
+                                                                                          newdate=newdate))
+            self.alter_table_file.write('-- <end>\n')
+            return
+
+        if is_change_column_property_flag == 1:
+            sql = '''
+            SELECT A.FIELD_CODE, A.DATA_TP NEW_TP, B.DATA_TP OLD_TP, A.LENGTH NEW_LENGTH, B.LENGTH OLD_LENGTH, A.PRECSN NEW_PRECSN, B.PRECSN OLD_PRECSN, A.PRIMARY_FLAG FROM
+            (SELECT TRIM(FIELD_CODE) FIELD_CODE, TRIM(DATA_TP) DATA_TP, TRIM(LENGTH) LENGTH, TRIM(PRECSN) PRECSN, CASE WHEN PRIMARY_KEY_FLAG='' THEN 'N' ELSE 'Y' END PRIMARY_FLAG
+            FROM DSA.ORGIN_TABLE_DETAIL
+            WHERE change_date = '{newdate}' AND TRIM(SRC_STM_ID) = '{syscode}' AND TRIM(TAB_CODE) = '{tablenm}')A
+            LEFT JOIN
+            (SELECT TRIM(FIELD_CODE) FIELD_CODE, TRIM(DATA_TP) DATA_TP, TRIM(LENGTH) LENGTH, TRIM(PRECSN) PRECSN, CASE WHEN PRIMARY_KEY_FLAG='' THEN 'N' ELSE 'Y' END PRIMARY_FLAG
+            FROM DSA.ORGIN_TABLE_DETAIL
+            WHERE change_date = '{olddate}' AND TRIM(SRC_STM_ID) = '{syscode}' AND TRIM(TAB_CODE) = '{tablenm}')B
+            ON A.FIELD_CODE = B.FIELD_CODE AND A.PRIMARY_FLAG = B.PRIMARY_FLAG
+            WHERE A.DATA_TP <> B.DATA_TP OR A.LENGTH <> B.LENGTH OR A.PRECSN <> B.PRECSN
+            '''.format(olddate=olddate, newdate=newdate, syscode=syscode, tablenm=tablenm)
+
+            rows = self._getResultList(sql)
+
+            if rows:
+                self.alter_table_file.write('-- <change property>\n')
+                for row in rows:
+                    field_code, new_type, old_type, new_length, old_length, new_precsn, old_precsn, primary = row
+
+                    if new_type == "CHARACTER":
+                        new_filed_line = 'CHARACTER(' +new_length+ ')'
+                    elif new_type == "CHAR":
+                        new_filed_line = 'CHAR(' +new_length+ ')'
+                    elif new_type == "DECIMAL":
+                        new_filed_line = 'DECIMAL(' +new_length+','+new_precsn+ ')'
+                    elif new_type == "VARCHAR":
+                        new_filed_line = 'VARCHAR(' +new_length+ ')'
+                    else:
+                        new_filed_line = new_type
+
+                    if old_type == "CHARACTER":
+                        old_filed_line = 'CHARACTER(' +old_length+ ')'
+                    elif old_type == "CHAR":
+                        old_filed_line = 'CHAR(' +old_length+ ')'
+                    elif old_type == "DECIMAL":
+                        old_filed_line = 'DECIMAL(' +old_length+','+old_precsn+ ')'
+                    elif old_type == "VARCHAR":
+                        old_filed_line = 'VARCHAR(' +old_length+ ')'
+                    else:
+                        old_filed_line = old_type
+
+                    self.alter_table_file.write("alter table {0} alter column {1} set data type {2};--old type:{3}\n".format(delta_tablename, field_code, new_filed_line, old_filed_line))
+
+                    self.alter_table_file.write("REORG TABLE "+delta_tablename+';\n')
+
+                    self.alter_table_file.write("alter table {0} alter column {1} set data type {2};--old type:{3}\n".format(table, field_code, new_filed_line, old_filed_line))
+
+                    self.alter_table_file.write("REORG TABLE "+table+';\n')
+
+                    self.alter_table_file.write("alter table {0} alter column {1} set data type {2};--old type:{3}\n".format(his_tablename, field_code, new_filed_line, old_filed_line))
+
+                    self.alter_table_file.write("REORG TABLE "+his_tablename+';\n')
+
+                self.alter_table_file.write("REORG TABLE "+table+';\n')
+                self.alter_table_file.write("REORG TABLE "+his_tablename+';\n')
+                self.alter_table_file.write("REORG TABLE "+delta_tablename+';\n')
+                self.alter_table_file.write('-- <end>\n')
+
         if is_add_common_column_flag:
             add_column_list = []
 
@@ -1207,65 +1285,6 @@ class CompareObj(object):
         if is_del_common_column_flag:
             pass
 
-        if is_change_column_property_flag:
-            sql = '''
-            SELECT A.FIELD_CODE, A.DATA_TP NEW_TP, B.DATA_TP OLD_TP, A.LENGTH NEW_LENGTH, B.LENGTH OLD_LENGTH, A.PRECSN NEW_PRECSN, B.PRECSN OLD_PRECSN, A.PRIMARY_FLAG FROM
-            (SELECT TRIM(FIELD_CODE) FIELD_CODE, TRIM(DATA_TP) DATA_TP, TRIM(LENGTH) LENGTH, TRIM(PRECSN) PRECSN, CASE WHEN PRIMARY_KEY_FLAG='' THEN 'N' ELSE 'Y' END PRIMARY_FLAG
-            FROM DSA.ORGIN_TABLE_DETAIL
-            WHERE change_date = '{newdate}' AND TRIM(SRC_STM_ID) = '{syscode}' AND TRIM(TAB_CODE) = '{tablenm}')A
-            LEFT JOIN
-            (SELECT TRIM(FIELD_CODE) FIELD_CODE, TRIM(DATA_TP) DATA_TP, TRIM(LENGTH) LENGTH, TRIM(PRECSN) PRECSN, CASE WHEN PRIMARY_KEY_FLAG='' THEN 'N' ELSE 'Y' END PRIMARY_FLAG
-            FROM DSA.ORGIN_TABLE_DETAIL
-            WHERE change_date = '{olddate}' AND TRIM(SRC_STM_ID) = '{syscode}' AND TRIM(TAB_CODE) = '{tablenm}')B
-            ON A.FIELD_CODE = B.FIELD_CODE AND A.PRIMARY_FLAG = B.PRIMARY_FLAG
-            WHERE A.DATA_TP <> B.DATA_TP OR A.LENGTH <> B.LENGTH OR A.PRECSN <> B.PRECSN
-            '''.format(olddate=olddate, newdate=newdate, syscode=syscode, tablenm=tablenm)
-
-            rows = self._getResultList(sql)
-
-            if rows:
-                self.alter_table_file.write('-- <change property>\n')
-                for row in rows:
-                    field_code, new_type, old_type, new_length, old_length, new_precsn, old_precsn, primary = row
-
-                    if new_type == "CHARACTER":
-                        new_filed_line = 'CHARACTER(' +new_length+ ')'
-                    elif new_type == "CHAR":
-                        new_filed_line = 'CHAR(' +new_length+ ')'
-                    elif new_type == "DECIMAL":
-                        new_filed_line = 'DECIMAL(' +new_length+','+new_precsn+ ')'
-                    elif new_type == "VARCHAR":
-                        new_filed_line = 'VARCHAR(' +new_length+ ')'
-                    else:
-                        new_filed_line = new_type
-
-                    if old_type == "CHARACTER":
-                        old_filed_line = 'CHARACTER(' +old_length+ ')'
-                    elif old_type == "CHAR":
-                        old_filed_line = 'CHAR(' +old_length+ ')'
-                    elif old_type == "DECIMAL":
-                        old_filed_line = 'DECIMAL(' +old_length+','+old_precsn+ ')'
-                    elif old_type == "VARCHAR":
-                        old_filed_line = 'VARCHAR(' +old_length+ ')'
-                    else:
-                        old_filed_line = old_type
-
-                    self.alter_table_file.write("alter table {0} alter column {1} set data type {2};--old type:{3}\n".format(delta_tablename, field_code, new_filed_line, old_filed_line))
-
-                    self.alter_table_file.write("REORG TABLE "+delta_tablename+';\n')
-
-                    self.alter_table_file.write("alter table {0} alter column {1} set data type {2};--old type:{3}\n".format(table, field_code, new_filed_line, old_filed_line))
-
-                    self.alter_table_file.write("REORG TABLE "+table+';\n')
-
-                    self.alter_table_file.write("alter table {0} alter column {1} set data type {2};--old type:{3}\n".format(his_tablename, field_code, new_filed_line, old_filed_line))
-
-                    self.alter_table_file.write("REORG TABLE "+his_tablename+';\n')
-
-                self.alter_table_file.write("REORG TABLE "+table+';\n')
-                self.alter_table_file.write("REORG TABLE "+his_tablename+';\n')
-                self.alter_table_file.write("REORG TABLE "+delta_tablename+';\n')
-                self.alter_table_file.write('-- <end>\n')
 
     def is_add_primary_column(self, table, is_flow_table_flag, primary_list, olddate, newdate):
         """
@@ -1493,9 +1512,14 @@ class CompareObj(object):
 
         rows = self._getResultList(sql)
 
+        primary_flag = 1
+
         if rows:
             for row in rows:
                 field_code, new_type, old_type, new_length, old_length, new_precsn, old_precsn, primary = row
+
+                if primary == 'Y':
+                    primary_flag = 2
 
                 if new_type == "CHARACTER":
                     new_filed_line = 'CHARACTER(' +new_length+ ')'
@@ -1519,10 +1543,10 @@ class CompareObj(object):
                 else:
                     old_filed_line = old_type
 
-                self._muti_outStream(u'%s.%s 字段属性变更 旧:%s  新:%s\n' %(table, field_code, old_filed_line, new_filed_line))
-                self.read_me_file.write(u'%s.%s 字段属性变更 旧:%s  新:%s\n' %(table, field_code, old_filed_line, new_filed_line))
+                self._muti_outStream(u'%s.%s 字段属性变更 旧:%s  新:%s 是否为主键:%s\n' %(table, field_code, old_filed_line, new_filed_line, primary))
+                self.read_me_file.write(u'%s.%s 字段属性变更 旧:%s  新:%s 是否为主键:%s\n' %(table, field_code, old_filed_line, new_filed_line, primary))
 
-            return True
+            return primary_flag
         return False
 
     def find_all_changes(self, olddate, newdate, different_tables):
@@ -1557,7 +1581,7 @@ class CompareObj(object):
             self.common_deal(table, is_add_primary_column_flag, is_del_primary_column_flag, is_change_to_primary_column_flag, is_change_from_primary_column_flag, is_add_common_column_flag, is_del_common_column_flag, is_change_column_property_flag, olddate, newdate, primary_list)
 
 
-            if (is_add_common_column_flag or is_del_common_column_flag) and not (is_add_primary_column_flag or is_del_primary_column_flag or is_change_to_primary_column_flag or is_change_from_primary_column_flag):
+            if (is_add_common_column_flag or is_del_common_column_flag) and not (is_add_primary_column_flag or is_del_primary_column_flag or is_change_to_primary_column_flag or is_change_from_primary_column_flag or is_change_column_property_flag == 2):
                 if is_del_common_column_flag:
                     self.alter_table_file.write("-- <del column>\n")
                 self.generate_ddl(table, type='delta', input_date=newdate)
