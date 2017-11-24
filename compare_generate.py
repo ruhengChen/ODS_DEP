@@ -1,4 +1,3 @@
-# pylint: disable=C0301
 # -*- coding=utf-8 -*-
 
 """
@@ -1128,7 +1127,7 @@ class CompareObj(object):
             self.generate_ap_sql(table, newdate)
 
             self.alter_table_file.write('-- <change from primary key>\n')
-            self.alter_table_file.write("drop table {delta_tablename};\n".format(delta_tablename=delta_tablename))
+            self.alter_table_file.write("DROP TABLE {delta_tablename};\n".format(delta_tablename=delta_tablename))
             self.alter_table_file.write("rename table {tablename} to {tablenm}_{newdate};\n".format(tablename=table, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write("rename table {his_tablename} to {syscode}_{tablenm}_{newdate};\n".format(his_tablename=his_tablename, syscode=syscode, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write('-- <end>\n')
@@ -1140,7 +1139,7 @@ class CompareObj(object):
             self.generate_ddl(table, type='odshis', input_date=newdate)
 
             self.alter_table_file.write('-- <change primary column type>\n')
-            self.alter_table_file.write("drop table {delta_tablename};\n".format(delta_tablename=delta_tablename))
+            self.alter_table_file.write("DROP TABLE {delta_tablename};\n".format(delta_tablename=delta_tablename))
             self.alter_table_file.write(
                 "rename table {tablename} to {tablenm}_{newdate};\n".format(tablename=table, tablenm=tablenm,
                                                                             newdate=newdate))
@@ -1699,10 +1698,10 @@ class CompareObj(object):
 
     def display_notice(self, input_date):
 
-        filelist = glob.glob(config.all_package_path + input_date + '*')
+        filelist = glob.glob(config.all_package_path + input_date.encode() + '*')
 
         for i in filelist:
-            with open(i.encode(), 'r') as f:
+            with open(i, 'r') as f:
                 data = f.read()
 
             self.read_me_file.write('\n\n'+'*'*100 + '\n' + data + '\n')
@@ -1865,7 +1864,7 @@ class CompareObj(object):
             '''
 
             self._muti_outStream(u"查找数据修复表\n")
-            self.data_fix(date_list[1])
+            self.data_fix(date_list[1].encode())
 
             '''
                 步骤六: 判断是否为全量
@@ -1922,7 +1921,7 @@ class CompareObj(object):
             显示公告内容
             '''
 
-            self.display_notice(input_date)
+            self.display_notice(date_list[1])
 
             return 0, u'执行成功'
 
