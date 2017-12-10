@@ -1629,35 +1629,51 @@ class CompareObj(object):
             with open(config.read_me_path.format(date=input_date), 'r') as f:
                 readme_data = f.read()
 
-        read_me_set = set(re.findall('\w+\.\w+', readme_data))
+        read_me_set = set(re.findall('\w+\.*\w+', readme_data)).union(set(re.findall('\w+', readme_data)))  # 需要把表名和模式名分开来, 不然过滤不了notelist中的不带模式名的表
         print "read_me_set: ", read_me_set
 
         notelist = glob.glob(config.all_package_path + input_date + '*')
         if not notelist:
-            self.compare_log_file.write('无说明文件, 无数据修复')
+            self.compare_log_file.write('无说明文件, 无数据修复\n')
 
         else:
-            if os.path.exists(config.all_package_path + input_date + '全量包说明'):
-                with open(config.all_package_path + input_date + '全量包说明', 'r') as f:
+            if os.path.exists(config.all_package_path + input_date + u'全量包说明'):
+                with open(config.all_package_path + input_date + u'全量包说明', 'r') as f:
                     all_note_data = f.read()
-            if os.path.exists(config.all_package_path + input_date + '升级说明'):
-                with open(config.all_package_path + input_date + '升级说明', 'r') as f:
+            if os.path.exists(config.all_package_path + input_date + u'升级说明'):
+                with open(config.all_package_path + input_date + u'升级说明', 'r') as f:
                     update_note_data = f.read()
 
         if read_me_set:
-            data = all_note_data + update_note_data
-            note_set = set(re.findall('\w+\.\w+', data))
+            data = (all_note_data + update_note_data).upper()
+            print "data: ", data
+            note_set = set(re.findall('\w+\.*\w+', data))
+            print "note_set: " ,note_set
             tmp_datafix_set = note_set - read_me_set
             for table in tmp_datafix_set:
-                syscode, tabnm = table.split('.')
-                sql = "SELECT COUNT(1) FROM SYSCAT.TABLES WHERE TABSCHEMA='{syscode}' AND TABNAME='{tabnm}'".format(
-                    syscode=syscode, tabnm=tabnm)
+                print(len(table.split('.')))
+                if len(table.split('.')) == 2:
+                    syscode, tabnm = table.split('.')
+                    sql = "SELECT COUNT(1) FROM SYSCAT.TABLES WHERE TABSCHEMA='{syscode}' AND TABNAME='{tabnm}'".format(
+                        syscode=syscode, tabnm=tabnm)
+                else:
+                    tabnm = table
+                    sql = "SELECT COUNT(1) FROM SYSCAT.TABLES WHERE TABNAME='{tabnm}'".format(
+                        tabnm=tabnm)
                 self.edw_cursor.execute(sql)
                 rows = self.edw_cursor.fetchall()
                 if rows[0][0]:
+                    if len(table.split('.')) == 1:
+                        sql = "SELECT TABSCHEMA,TABNAME FROM SYSCAT.TABLES WHERE TABNAME='{tabnm}'".format(tabnm=tabnm)
+                        self.edw_cursor.execute(sql)
+                        rows = self.edw_cursor.fetchall()
+                        syscode, tabnm = rows[0]
+                        table = syscode + '.' + tabnm
                     print '%s 表需要数据修复\n' % table
                     self.compare_log_file.write('%s 表需要数据修复\n' % table)
                     data_fix_list.append(table)
+                else:
+                    print '由于库中不存在%s表,不需要数据修复\n' % table
         else:
             print "read_me_set 为空"
 
@@ -1666,6 +1682,7 @@ class CompareObj(object):
                 syscode, tablenm = table.split('.')
                 sql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET ALT_STS_TP='F' WHERE SRC_STM_ID='{syscode}' AND TAB_CODE = '{tablenm}' AND CHANGE_DATE = '{date}'".format(
                     date=input_date, tablenm=tablenm, syscode=syscode)
+
                 self.dwmm_cursur.execute(sql)
                 self.dwmm_cursur.commit()
 
@@ -1681,6 +1698,7 @@ class CompareObj(object):
 
             for row in rows:
                 syscode, tablenm = row
+                print("库中需要数据修复表: {syscode}.{tablenm}\n".format(syscode=syscode, tablenm=tablenm))
                 table = syscode.strip() + '.' + tablenm.strip()
                 his_tablename = "ODSHIS."+table.replace(".", "_")
                 self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='LD_ODS_{syscode}_{tablenm}_INIT';\n".format(syscode=syscode, tablenm=tablenm))
