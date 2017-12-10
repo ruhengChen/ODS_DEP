@@ -11,7 +11,7 @@ import chardet
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-
+software_version = 2.7
 
 class rollBackObj(object):
     def __init__(self):

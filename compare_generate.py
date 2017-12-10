@@ -14,6 +14,10 @@ import os
 import codecs
 import time
 import config
+import execute_ap
+import execute_job
+import execute_table
+import rollback_table
 import shutil
 from collections import Counter
 import stat
@@ -1831,6 +1835,15 @@ class CompareObj(object):
                 table_list = []
 
             table_list = [x.strip() for x in table_list]
+
+            ## 软件版本
+            software_version = 2.7
+            self.read_me_file.write(u"compare版本:%s\n" %software_version)
+            self.read_me_file.write(u"config版本:%s\n" %config.software_version)
+            self.read_me_file.write(u"execute_table版本:%s\n" %execute_table.software_version)
+            self.read_me_file.write(u"execute_ap版本:%s\n" % execute_ap.software_version)
+            self.read_me_file.write(u"execute_job版本:%s\n" % execute_job.software_version)
+            self.read_me_file.write(u"rollback_table版本:%s\n" % rollback_table.software_version)
 
             self._muti_outStream(u"时间: {date}  系统名: {srcName}  表名: {tableName}\n".format(date=date_list[1], srcName=src_name, tableName=table_name))
             self.read_me_file.write(u"时间: {date}  系统名: {srcName}  表名: {tableName}\n".format(date=date_list[1], srcName=src_name, tableName=table_name))

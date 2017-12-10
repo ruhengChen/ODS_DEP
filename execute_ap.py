@@ -12,6 +12,7 @@ import json
 import traceback
 import commands
 
+software_version = 2.7
 conn = pyodbc.connect('DSN=%s' %config.dwmm_dsn)
 dwmm_cursur = conn.cursor()
 

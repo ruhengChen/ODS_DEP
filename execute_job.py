@@ -15,6 +15,7 @@ import commands
 
 # conn = ibm_db.connect("DATABASE={DATABASE};HOSTNAME={HOSTNAME};PORT={PORT};PROTOCOL={PROTOCOL};UID={UID};PWD={PWD};".format(DATABASE=config.DATABASE, HOSTNAME=config.HOSTNAME, PORT=config.PORT, PROTOCOL=config.PROTOCOL, UID=config.UID, PWD=config.PWD), "", "")
 
+software_version = 2.7
 conn = pyodbc.connect('DSN=%s' %config.dwmm_dsn)
 dwmm_cursur = conn.cursor()
 

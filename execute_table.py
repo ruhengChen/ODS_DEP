@@ -15,6 +15,7 @@ import codecs
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+software_version = 2.7
 print("start...")
 
 # conn = ibm_db.connect("DATABASE={DATABASE};HOSTNAME={HOSTNAME};PORT={PORT};PROTOCOL={PROTOCOL};UID={UID};PWD={PWD};".format(DATABASE=config.DATABASE, HOSTNAME=config.HOSTNAME, PORT=config.PORT, PROTOCOL=config.PROTOCOL, UID=config.UID, PWD=config.PWD), "", "")
