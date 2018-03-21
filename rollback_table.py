@@ -285,6 +285,12 @@ def main(input_dict):
     return json.dumps(return_dict, ensure_ascii=False)
 
 if __name__ == "__main__":
-    input_dict = {"SMY_DT":"20170426", "guid":"123456"}
+    # input_dict = {"SMY_DT":"20170426", "guid":"123456"}
 
-    main(input_dict)
+    input_date = sys.argv[1]
+    input_dict = {"SMY_DT":input_date}
+    resp = main(input_dict)
+
+    if eval(resp).get("returnCode") != 200:
+        print "error:", eval(resp).get("returnMsg")
+        exit(-1)

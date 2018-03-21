@@ -210,7 +210,8 @@ class CompareObj(object):
 
         reg = re.compile(r'CREATE TABLE')
         for table in backup_table_list:
-
+            if len(table.split(".")) != 2:
+                raise Exception("tablename error! %s" % table)
             schema, tablename = table.split('.')
             backup_path = config.backup_path.format(date=input_date)+table+".ddl.bak"
 
@@ -218,6 +219,7 @@ class CompareObj(object):
                 self._muti_outStream("backup exists %s\n" %table)
             else:
                 cmd = "db2look -d {edwdb} -z {schema} -e -t {tablename} -nofed -o /etl/etldata/script/yatop_update/{date}/backup/{table}.ddl.bak -i {edwuser} -w {edwpwd}".format(edwdb=config.edwdb, schema=schema,tablename=tablename,date=input_date,table=table, edwuser=config.edwuser, edwpwd=config.edwpwd)
+                print(cmd)
 
                 self._muti_outStream("backup %s\n" %table)
                 commands.getstatusoutput(cmd)
@@ -341,6 +343,7 @@ class CompareObj(object):
         self.job_schedule_file.write("connect to {0} user {1} using {2};\n".format(config.dwmmdb, config.dwmmuser, config.dwmmpwd))
 
     def _muti_outStream(self, msg):
+        msg = time.strftime('%Y-%m-%d %T', time.localtime()) + msg
         sys.stdout.write(msg)
         self.compare_log_file.write(msg)
 
@@ -355,7 +358,7 @@ class CompareObj(object):
             datelist.append(date[0])
 
         if input_date not in datelist:
-            print(u"输入日期不存在于数据库")
+            print(time.strftime('%Y-%m-%d %T', time.localtime()) + u"输入日期不存在于数据库")
             return -1, u"输入日期不存在于数据库"
         else:
             position = datelist.index(input_date)
@@ -364,12 +367,12 @@ class CompareObj(object):
                 datelist = ['19000101', input_date]
             elif flag == 'D':
                 if position < 1:   ## 如果为数据库内第一个日期
-                    print(u"输入日期是数据库中的第一个日期,但是你选择了增量模式")
+                    print(time.strftime('%Y-%m-%d %T', time.localtime()) + u"输入日期是数据库中的第一个日期,但是你选择了增量模式")
                     return -1, u"输入日期是数据库中的第一个日期,但是你选择了增量模式"
                 else:
                     datelist = datelist[position-1: position+1]
             else:
-                print(u"输入模式不合法,请选择增量或全量模式(D/A)")
+                print(time.strftime('%Y-%m-%d %T', time.localtime()) + u"输入模式不合法,请选择增量或全量模式(D/A)")
                 return -1, u"输入模式不合法,请选择增量或全量模式(D/A)"
 
         return 0, datelist
@@ -444,6 +447,8 @@ class CompareObj(object):
         返回这张表是否为主键表, 返回主键列表 primary_key_list 若为空则为非主键表
         """
         primary_key_list = []
+        if len(table_name.split(".")) != 2:
+            raise Exception("tablename error! %s" % table_name)
         syscode, tablenm = table_name.split(".")
         sql = "SELECT TRIM(FIELD_CODE), CASE WHEN PRIMARY_KEY_FLAG='' THEN 'N' ELSE 'Y' END FROM DSA.ORGIN_TABLE_DETAIL WHERE TRIM(SRC_STM_ID) = '{syscode}' AND TRIM(TAB_CODE) = '{tablename}' AND CHANGE_DATE='{date}'".format(syscode=syscode, tablename=tablenm, date=input_date)
 
@@ -463,6 +468,8 @@ class CompareObj(object):
         """
         返回这张表是否为流水表, 1,0
         """
+        if len(table_name.split(".")) != 2:
+            raise Exception("tablename error! %s" %table_name)
         syscode, tablenm = table_name.split(".")
         sql = "SELECT IS_RL_TBL_F FROM DSA.ORGIN_TABLE_DETAIL_T WHERE TRIM(SRC_STM_ID) = '{syscode}' AND TRIM(TAB_CODE) = '{tablename}' AND CHANGE_DATE='{date}'".format(syscode=syscode, tablename=tablenm, date=input_date)
 
@@ -490,6 +497,8 @@ class CompareObj(object):
         delta_tablename = "DELTA."+table.replace(".", "_")
         his_tablename = "ODSHIS."+table.replace(".", "_")
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split(".")
 
         sql = "SELECT TRIM(FIELD_CODE),TRIM(DATA_TP),TRIM(LENGTH),TRIM(PRECSN),CASE WHEN PRIMARY_KEY_FLAG='' THEN 'N' ELSE 'Y' END, TRIM(TAB_NM),TRIM(FIELD_NM) FROM DSA.ORGIN_TABLE_DETAIL WHERE TRIM(SRC_STM_ID) ='{2}' AND TRIM(TAB_CODE) = '{0}' AND CHANGE_DATE='{1}' ORDER BY CAST(COLUMN_ID AS INT)".format(tablenm, input_date, syscode)
@@ -642,6 +651,8 @@ class CompareObj(object):
 
         field_code_list = []
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split(".")
 
         sql = "SELECT TRIM(FIELD_CODE) FROM DSA.ORGIN_TABLE_DETAIL WHERE TRIM(SRC_STM_ID) ='{2}' AND TRIM(TAB_CODE) = '{0}' AND CHANGE_DATE='{1}' ORDER BY CAST(COLUMN_ID AS INT)".format(tablenm, input_date, syscode)
@@ -662,6 +673,8 @@ class CompareObj(object):
 
         is_flow_table_flag = self.is_flow_table(table, input_date)
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split(".")
 
         field_code_list = self.get_field_code_list(table, input_date)
@@ -921,6 +934,8 @@ class CompareObj(object):
             self.generate_ap_sql_init(table, input_date)
 
             tablestr = table.replace('.', '_')
+            if len(table.split(".")) != 2:
+                raise Exception("tablename error! %s" % table)
             syscode, tablenm = table.split('.')
 
             muti_outStream("--add table")
@@ -1060,6 +1075,8 @@ class CompareObj(object):
         different_tables = []
 
         for table in deal_list:
+            if len(table.split(".")) != 2:
+                raise Exception("tablename error! %s" % table)
             syscode, tablenm = table.split('.')
             old_sql = "SELECT TRIM(FIELD_CODE),TRIM(DATA_TP)||','||TRIM(LENGTH)||','||TRIM(PRECSN),CASE WHEN PRIMARY_KEY_FLAG='' THEN 'N' ELSE 'Y' END FROM DSA.ORGIN_TABLE_DETAIL WHERE TRIM(SRC_STM_ID) ='{0}' AND TRIM(TAB_CODE) = '{1}' AND CHANGE_DATE='{2}' ORDER BY CAST(COLUMN_ID AS INT)".format(syscode, tablenm, olddate)
 
@@ -1076,6 +1093,8 @@ class CompareObj(object):
 
     def common_deal(self, table, is_add_primary_column_flag, is_del_primary_column_flag, is_change_to_primary_column_flag, is_change_from_primary_column_flag, is_add_common_column_flag, is_del_common_column_flag, is_change_column_property_flag, olddate, newdate, primary_list):
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split('.')
         delta_tablename = "DELTA."+table.replace(".", "_")
         his_tablename = "ODSHIS."+table.replace(".", "_")
@@ -1093,6 +1112,11 @@ class CompareObj(object):
             self.alter_table_file.write("rename table {his_tablename} to {syscode}_{tablenm}_{newdate};\n".format(his_tablename=his_tablename, syscode=syscode, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write('-- <end>\n')
 
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='UNCOMPRESS_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='FTP_DOWNLOAD_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' where JOB_NM='LD_ODS_%s_INIT';\n" %(table.replace('.','_')))
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='W' where job_nm='LD_ODS_%s';\n" %(table.replace('.','_')))
+
             return
 
         if is_del_primary_column_flag:
@@ -1107,6 +1131,12 @@ class CompareObj(object):
             self.alter_table_file.write("rename table {tablename} to {tablenm}_{newdate};\n".format(tablename=table, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write("rename table {his_tablename} to {syscode}_{tablenm}_{newdate};\n".format(his_tablename=his_tablename, syscode=syscode, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write('-- <end>\n')
+
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='UNCOMPRESS_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='FTP_DOWNLOAD_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' where JOB_NM='LD_ODS_%s_INIT';\n" % (table.replace('.', '_')))
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='W' where job_nm='LD_ODS_%s';\n" % (table.replace('.', '_')))
+
             return
 
         if is_change_to_primary_column_flag:
@@ -1121,6 +1151,12 @@ class CompareObj(object):
             self.alter_table_file.write("rename table {tablename} to {tablenm}_{newdate};\n".format(tablename=table, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write("rename table {his_tablename} to {syscode}_{tablenm}_{newdate};\n".format(his_tablename=his_tablename, syscode=syscode, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write('-- <end>\n')
+
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='UNCOMPRESS_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='FTP_DOWNLOAD_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' where JOB_NM='LD_ODS_%s_INIT';\n" % (table.replace('.', '_')))
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='W' where job_nm='LD_ODS_%s';\n" % (table.replace('.', '_')))
+
             return
 
         if is_change_from_primary_column_flag:
@@ -1135,6 +1171,12 @@ class CompareObj(object):
             self.alter_table_file.write("rename table {tablename} to {tablenm}_{newdate};\n".format(tablename=table, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write("rename table {his_tablename} to {syscode}_{tablenm}_{newdate};\n".format(his_tablename=his_tablename, syscode=syscode, tablenm=tablenm, newdate=newdate))
             self.alter_table_file.write('-- <end>\n')
+
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='UNCOMPRESS_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='FTP_DOWNLOAD_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' where JOB_NM='LD_ODS_%s_INIT';\n" % (table.replace('.', '_')))
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='W' where job_nm='LD_ODS_%s';\n" % (table.replace('.', '_')))
+
             return
 
         if is_change_column_property_flag == 2:
@@ -1153,6 +1195,12 @@ class CompareObj(object):
                                                                                           tablenm=tablenm,
                                                                                           newdate=newdate))
             self.alter_table_file.write('-- <end>\n')
+
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='UNCOMPRESS_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' WHERE JOB_NM ='FTP_DOWNLOAD_INIT';\n")
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='N' where JOB_NM='LD_ODS_%s_INIT';\n" % (table.replace('.', '_')))
+            self.job_schedule_file.write("UPDATE ETL.JOB_METADATA SET INIT_FLAG='W' where job_nm='LD_ODS_%s';\n" % (table.replace('.', '_')))
+
             return
 
         if is_change_column_property_flag == 1:
@@ -1198,10 +1246,6 @@ class CompareObj(object):
                     else:
                         old_filed_line = old_type
 
-                    self.alter_table_file.write("alter table {0} alter column {1} set data type {2};--old type:{3}\n".format(delta_tablename, field_code, new_filed_line, old_filed_line))
-
-                    self.alter_table_file.write("REORG TABLE "+delta_tablename+';\n')
-
                     self.alter_table_file.write("alter table {0} alter column {1} set data type {2};--old type:{3}\n".format(table, field_code, new_filed_line, old_filed_line))
 
                     self.alter_table_file.write("REORG TABLE "+table+';\n')
@@ -1212,7 +1256,7 @@ class CompareObj(object):
 
                 self.alter_table_file.write("REORG TABLE "+table+';\n')
                 self.alter_table_file.write("REORG TABLE "+his_tablename+';\n')
-                self.alter_table_file.write("REORG TABLE "+delta_tablename+';\n')
+                #self.alter_table_file.write("REORG TABLE "+delta_tablename+';\n')
                 self.alter_table_file.write('-- <end>\n')
 
         if is_add_common_column_flag:
@@ -1295,6 +1339,8 @@ class CompareObj(object):
         """
         self._muti_outStream(u"\n%s 新增主键字段的处理: \n" %table)
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split('.')
 
         delta_tablename = "DELTA."+table.replace(".", "_")
@@ -1323,6 +1369,8 @@ class CompareObj(object):
         """
         self._muti_outStream(u"\n%s 删除主键字段的处理: \n" %(table))
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split('.')
 
         delta_tablename = "DELTA."+table.replace(".", "_")
@@ -1355,6 +1403,8 @@ class CompareObj(object):
         """
         self._muti_outStream(u"\n%s 字段变为主键的处理: \n" %(table))
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split('.')
 
         delta_tablename = "DELTA."+table.replace(".", "_")
@@ -1387,6 +1437,8 @@ class CompareObj(object):
         """
         self._muti_outStream(u"\n%s 字段变为非主键的处理: \n" %(table))
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split('.')
 
         delta_tablename = "DELTA."+table.replace(".", "_")
@@ -1420,6 +1472,8 @@ class CompareObj(object):
         self._muti_outStream(u"\n%s 新增普通字段的处理: \n" %(table))
 
         add_column_list = []
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split('.')
         delta_tablename = "DELTA."+table.replace(".", "_")
         his_tablename = "ODSHIS."+table.replace(".", "_")
@@ -1464,6 +1518,8 @@ class CompareObj(object):
         """
         self._muti_outStream(u"\n%s 删除普通字段的处理: \n" %(table))
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split('.')
 
         delta_tablename = "DELTA."+table.replace(".", "_")
@@ -1495,6 +1551,8 @@ class CompareObj(object):
         """
         self._muti_outStream(u"\n%s 字段属性变更的处理: \n" %(table))
 
+        if len(table.split(".")) != 2:
+            raise Exception("tablename error! %s" %table)
         syscode, tablenm = table.split('.')
 
         delta_tablename = "DELTA."+table.replace(".", "_")
@@ -1597,8 +1655,8 @@ UNION ALL
 
             self.common_deal(table, is_add_primary_column_flag, is_del_primary_column_flag, is_change_to_primary_column_flag, is_change_from_primary_column_flag, is_add_common_column_flag, is_del_common_column_flag, is_change_column_property_flag, olddate, newdate, primary_list)
 
-
-            if (is_add_common_column_flag or is_del_common_column_flag) and not (is_add_primary_column_flag or is_del_primary_column_flag or is_change_to_primary_column_flag or is_change_from_primary_column_flag or is_change_column_property_flag == 2):
+            # 新增普通字段\删除普通字段\更改普通字段属性 只需要重建一次delta表
+            if (is_add_common_column_flag or is_del_common_column_flag or is_change_column_property_flag == 1) and not (is_add_primary_column_flag or is_del_primary_column_flag or is_change_to_primary_column_flag or is_change_from_primary_column_flag or is_change_column_property_flag == 2):
                 if is_del_common_column_flag:
                     self.alter_table_file.write("-- <del column>\n")
                 self.generate_ddl(table, type='delta', input_date=newdate)
@@ -1697,6 +1755,8 @@ UNION ALL
 
         if data_fix_list:
             for table in data_fix_list:
+                if len(table.split(".")) != 2:
+                    raise Exception("tablename error! %s" % table)
                 syscode, tablenm = table.split('.')
                 sql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET ALT_STS_TP='F' WHERE SRC_STM_ID='{syscode}' AND TAB_CODE = '{tablenm}' AND CHANGE_DATE = '{date}'".format(
                     date=input_date, tablenm=tablenm, syscode=syscode)
@@ -1844,6 +1904,8 @@ UNION ALL
             self._muti_outStream(u"输入日期:%s,%s\n" %(date_list[0], date_list[1]))
 
             if table_name:
+                if len(table_name.split(".")) != 2:
+                    raise Exception("tablename error! %s" % table_name)
                 table_list = table_name.split(',')
             else:
                 table_list = []
@@ -1851,7 +1913,7 @@ UNION ALL
             table_list = [x.strip() for x in table_list]
 
             ## 软件版本
-            software_version = 2.7
+            software_version = 2.8
             self.read_me_file.write(u"compare版本:%s\n" %software_version)
             self.read_me_file.write(u"config版本:%s\n" %config.software_version)
             self.read_me_file.write(u"execute_table版本:%s\n" %execute_table.software_version)
@@ -1867,7 +1929,7 @@ UNION ALL
                 I: 上一版本日期, 这一版本日期, 指定的schema名
                 O: 文件输出
             '''
-            print("---------------------find_deal_schema------------------------")
+            print(time.strftime('%Y-%m-%d %T', time.localtime()) + "---------------------find_deal_schema------------------------")
 
             self.find_deal_schema(date_list[0], date_list[1], src_name)
 
@@ -1876,6 +1938,7 @@ UNION ALL
                 I: 上一版本日期, 这一版本日期, 指定的schema名, 指定的表名
                 O: 有差异的表名单
             '''
+            print(time.strftime('%Y-%m-%d %T', time.localtime()) + u"步骤二: 找到新增和删除的所有表以及有差异的表")
             return_dict = self.find_different_tables(date_list[0], date_list[1], src_name, table_list)
             if return_dict.get('returnCode') == 400:
                 return -1, return_dict.get('returnMsg')
@@ -1887,11 +1950,13 @@ UNION ALL
                 I: 上一版本日期, 这一版本日期, 有差异的表名单
                 O:
             '''
+            print(time.strftime('%Y-%m-%d %T', time.localtime()) + u"步骤三: 找到有差异的表, 按表级找到所有差异")
             self.find_all_changes(date_list[0], date_list[1], different_tables)
 
             '''
                 步骤四: 备份 生成 回滚程序
             '''
+            print(time.strftime('%Y-%m-%d %T', time.localtime())+ u"步骤四: 备份 生成 回滚程序")
             if config.isLinuxSystem():
                 ret = self.generate_rollback_ap(date_list[1])
                 if ret:
@@ -1924,6 +1989,7 @@ UNION ALL
             '''
                步骤0: 若只输入日期则调度新增, 相当于初始化新增调度
            '''
+            print(time.strftime('%Y-%m-%d %T', time.localtime()) + u"步骤0: 若只输入日期则调度新增, 相当于初始化新增调度")
             self.deal_init_job(src_name, table_name, flag)
 
             # self.read_me_file.close()
@@ -1931,6 +1997,7 @@ UNION ALL
             f = codecs.open(config.read_me_path.format(date=date_list[1]), 'r', encoding='utf-8')
             data = f.read()
 
+            print(time.strftime('%Y-%m-%d %T', time.localtime()) + u"生成README_A")
             ## 生成README_A
             if flag == "A":
                 schemaList = []
@@ -1966,6 +2033,7 @@ UNION ALL
             显示公告内容
             '''
 
+            print(time.strftime('%Y-%m-%d %T', time.localtime()) + u"显示公告内容")
             self.display_notice(date_list[1])
 
             return 0, u'执行成功'
@@ -2007,7 +2075,11 @@ if __name__ == "__main__":
 
     compare = CompareObj()
 
-    return_dict = compare.main(input_dict)
+    try:
+        return_dict = compare.main(input_dict)
+    finally:
+        compare.conn.close()
+        compare.edw_conn.close()
 
     print(return_dict)
 

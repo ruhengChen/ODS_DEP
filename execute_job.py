@@ -16,12 +16,16 @@ import commands
 # conn = ibm_db.connect("DATABASE={DATABASE};HOSTNAME={HOSTNAME};PORT={PORT};PROTOCOL={PROTOCOL};UID={UID};PWD={PWD};".format(DATABASE=config.DATABASE, HOSTNAME=config.HOSTNAME, PORT=config.PORT, PROTOCOL=config.PROTOCOL, UID=config.UID, PWD=config.PWD), "", "")
 
 software_version = 2.7
-conn = pyodbc.connect('DSN=%s' %config.dwmm_dsn)
-dwmm_cursur = conn.cursor()
+
+def get_con():
+    conn = pyodbc.connect('DSN=%s' %config.dwmm_dsn)
+    dwmm_cursur = conn.cursor()
+    return dwmm_cursur
 
 global execute_logFile
 
 def validate_date(date):
+    dwmm_cursur = get_con()
     #"""判断确认此日期大于job_log的最大批量日期"""
     sql = "SELECT count(1) FROM ETL.JOB_LOG"
     dwmm_cursur.execute(sql)
@@ -91,11 +95,14 @@ def main(input_date):
 
     ## 判断是否已经执行过
     if os.path.exists(config.etl_path.format(date=input_date)+'jobHandFile'):
-        print(u"job_schedule error! 请勿重复执行\n请先回滚后重新执行")
-        return_dict["returnCode"] = 400
-        return_dict["returnMsg"] = u'请勿重复执行\n 请先回滚后重新执行'
+        with open(config.etl_path.format(date=input_date)+'jobHandFile') as f:
+            data = f.read()
+        if data == "success_do":
+            print(u"job_schedule error! 请勿重复执行\n请先回滚后重新执行")
+            return_dict["returnCode"] = 400
+            return_dict["returnMsg"] = u'请勿重复执行\n 请先回滚后重新执行'
 
-        return json.dumps(return_dict, ensure_ascii=False)
+            return json.dumps(return_dict, ensure_ascii=False)
 
     # 创建握手文件
     jobHandFilePath = '/etl/etldata/script/yatop_update/{date}/jobHandFile'.format(date=input_date)
@@ -134,7 +141,12 @@ def main(input_date):
 
 
 if __name__ == "__main__":
-    input_date = raw_input('input_date:')
+    # input_date = raw_input('input_date:')
+    input_date = sys.argv[1]
     resp = main(input_date)
     print(resp)
+
+    if eval(resp).get("returnCode") != 200:
+        print "error:", eval(resp).get("returnMsg")
+        exit(-1)
 

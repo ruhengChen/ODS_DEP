@@ -13,14 +13,18 @@ import traceback
 import commands
 
 software_version = 2.7
-conn = pyodbc.connect('DSN=%s' %config.dwmm_dsn)
-dwmm_cursur = conn.cursor()
+
+def get_con():
+    conn = pyodbc.connect('DSN=%s' %config.dwmm_dsn)
+    dwmm_cursur = conn.cursor()
+    return dwmm_cursur
 
 #conn = ibm_db.connect("DATABASE={DATABASE};HOSTNAME={HOSTNAME};PORT={PORT};PROTOCOL={PROTOCOL};UID={UID};PWD={PWD};".format(DATABASE=config.DATABASE, HOSTNAME=config.HOSTNAME, PORT=config.PORT, PROTOCOL=config.PROTOCOL, UID=config.UID, PWD=config.PWD), "", "")
 
 global execute_logFile
 
 def validate_date(date):
+    dwmm_cursur = get_con()
     sql = "SELECT count(1) FROM ETL.JOB_LOG"
     dwmm_cursur.execute(sql)
     rows = dwmm_cursur.fetchall()
@@ -85,9 +89,9 @@ def execute_ap(input_date):
 
 def mainaaa(input_date):
 
-    ## 删除错误日志
-    if os.path.exists('/etl/etldata/script/yatop_update/{date}/execute_ap.error'.format(date=input_date)):
-        os.remove('/etl/etldata/script/yatop_update/{date}/execute_ap.error'.format(date=input_date))
+    # ## 删除错误日志
+    # if os.path.exists('/etl/etldata/script/yatop_update/{date}/execute_ap.error'.format(date=input_date)):
+    #     os.remove('/etl/etldata/script/yatop_update/{date}/execute_ap.error'.format(date=input_date))
 
     return_dict = {}
 
@@ -98,11 +102,14 @@ def mainaaa(input_date):
 
     # 判断是否已经执行过
     if os.path.exists(config.etl_path.format(date=input_date)+'apHandFile'):
-        print(u"请勿重复执行\n请先回滚后重新执行")
-        return_dict["returnCode"] = 400
-        return_dict["returnMsg"] = u'请勿重复执行\n 请先回滚后重新执行'
+        with open(config.etl_path.format(date=input_date)+'apHandFile') as f:
+            data = f.read()
+        if data == "success_do":
+            print(u"请勿重复执行\n请先回滚后重新执行")
+            return_dict["returnCode"] = 400
+            return_dict["returnMsg"] = u'请勿重复执行\n 请先回滚后重新执行'
 
-        return json.dumps(return_dict, ensure_ascii=False)
+            return json.dumps(return_dict, ensure_ascii=False)
 
     ## 创建握手文件
     apHandFilePath = '/etl/etldata/script/yatop_update/{date}/apHandFile'.format(date=input_date)
@@ -134,7 +141,14 @@ def mainaaa(input_date):
 
 
 if __name__ == "__main__":
-    input_date = raw_input('input_date:')
+    # input_date = raw_input('input_date:')
+    input_date = sys.argv[1]
     resp = mainaaa(input_date)
     print(resp)
+
+    if eval(resp).get("returnCode") != 200:
+        print "error:", eval(resp).get("returnMsg")
+        exit(-1)
+
+
 

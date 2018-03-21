@@ -67,7 +67,8 @@ def compare():
 
             writeHandFile(compareHandFilePath, 'failed')
 
-            resp = json.dumps({'returnCode':400,'returnMsg':resp.get('returnMsg')})
+            resp = json.dumps({'returnCode':400,'returnMsg':str(resp.get('returnMsg'))+
+                                                            repr(traceback.format_exception(exc_type, exc_value, exc_traceback))})
             return resp.decode('utf-8').encode('utf-8')
 
         print(resp)
@@ -84,112 +85,6 @@ def compare():
 #    resp = execute.main()
 #    return resp
 
-@app.route('/rollback_ap',methods=['GET', 'POST'])  #执行回滚脚本
-def rollbackap():
-    status,output = -1, ""
-    if request.method == 'POST':
-        a = request.get_data()
-        dict1 = json.loads(a)
-        changeDate = dict1['date']
-        print("rollBackApDate: %s" %changeDate)
-        status, output = commands.getstatusoutput("sh /etl/etldata/script/yatop_update/"+changeDate+"/rollback_ap.sh")
-        print(output)
-
-    if status == 0:
-        status = 200
-        ret_dict={"returnCode":status,"returnMsg":output}
-        response = app.response_class(
-            response=json.dumps(ret_dict),
-            status=200,
-            mimetype='application/json'
-        )
-        return response
-    else:
-        status = 400
-        ret_dict={"returnCode":status,"returnMsg":output}
-        response = app.response_class(
-            response=json.dumps(ret_dict),
-            status=400,
-            mimetype='application/json'
-        )
-        return response
-
-
-@app.route('/rollback_job',methods=['GET', 'POST'])  #执行回滚脚本
-def rollbackjob():
-    if request.method == 'POST':
-        a = request.get_data()
-        dict1 = json.loads(a)
-        changeDate = dict1['date']
-        status, output = commands.getstatusoutput("sh /etl/etldata/script/yatop_update/"+changeDate+"/rollback_job.sh")
-        if status ==0 : #将执行成功默认是200,status的值为200,表示成功,需要转码
-            status = 200
-            output = "回滚job成功"
-        ret_dict={"returnCode":status,"returnMsg":output}
-        response = app.response_class(
-            response=json.dumps(ret_dict),
-            status=200,
-            mimetype='application/json'
-        )
-        return response
-
-
-@app.route('/rollback_table',methods=['GET', 'POST'])  #执行回滚脚本
-def rollbacktable():
-    if request.method == 'POST':
-        a = request.get_data()
-        dict1 = json.loads(a)
-        changeDate = dict1['SMY_DT']
-        # dict1 = {"SMY_DT":"20170426"}
-
-        try:
-            resp = rollback_table.main(dict1)
-        except Exception:
-            print("failed")
-
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-
-            with open('rollback_table.error'.format(date=changeDate),'w') as f:
-                f.write(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-
-            resp = json.dumps({'returnCode':400, 'returnMsg':'RollbackTable An Exception occured'})
-            return resp.decode('utf-8').encode('utf-8')
-
-        return resp.decode('utf-8').encode('utf-8')
-
-
-@app.route('/execute_job',methods=['GET', 'POST'])  #执行JOB脚本
-def executejob():
-    a = request.get_data()
-    dict1 = json.loads(a)
-    changeDate = dict1['date']
-
-    ## 创建握手文件
-    jobHandFilePath = '/etl/etldata/script/yatop_update/{date}/jobHandFile'.format(date=changeDate)
-
-    #writeHandFile(jobHandFilePath, 'waiting')
-
-    try:
-        resp = execute_job.main(changeDate)
-    except Exception:
-        print("failed")
-
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-
-        with open('execute_job.error'.format(date=changeDate),'w') as f:
-            f.write(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-
-        writeHandFile(jobHandFilePath, 'failed')
-
-        resp = json.dumps({'returnCode':400,'returnMsg':'Job An Exception occured'})
-        return resp.decode('utf-8').encode('utf-8')
-
-    if eval(resp).get('returnCode') == 200:
-        writeHandFile(jobHandFilePath, 'success')
-    else:
-        writeHandFile(jobHandFilePath, 'failed')
-
-    return resp.decode('utf-8').encode('utf-8')
 
 
 @app.route('/execute_ap',methods=['GET', 'POST'])  #执行AP脚本
@@ -212,19 +107,52 @@ def executeap():
         with open('execute_ap.error'.format(date=changeDate),'w') as f:
             f.write(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
 
-        writeHandFile(apHandFilePath, 'failed')
+        writeHandFile(apHandFilePath, 'fail_do')
 
-        resp = json.dumps({'returnCode':400,'returnMsg':'AP An Exception occured'})
+        resp = json.dumps({'returnCode':400,'returnMsg':'AP An Exception occured'+
+                                                        repr(traceback.format_exception(exc_type, exc_value, exc_traceback))})
         return resp.decode('utf-8').encode('utf-8')
 
     if eval(resp).get('returnCode') == 200:
-        writeHandFile(apHandFilePath, 'success')
+        writeHandFile(apHandFilePath, 'success_do')
     else:
-        writeHandFile(apHandFilePath, 'failed')
+        writeHandFile(apHandFilePath, 'fail_do')
 
     return resp.decode('utf-8').encode('utf-8')
 
 
+@app.route('/rollback_ap',methods=['GET', 'POST'])  #执行回滚脚本
+def rollbackap():
+    status,output = -1, ""
+    if request.method == 'POST':
+        a = request.get_data()
+        dict1 = json.loads(a)
+        changeDate = dict1['date']
+        apHandFilePath = '/etl/etldata/script/yatop_update/{date}/apHandFile'.format(date=changeDate)
+        print("rollBackApDate: %s" %changeDate)
+        status, output = commands.getstatusoutput("sh /etl/etldata/script/yatop_update/"+changeDate+"/rollback_ap.sh")
+        print(output)
+
+    if status == 0:
+        writeHandFile(apHandFilePath, 'success_rollback')
+        status = 200
+        ret_dict={"returnCode":status,"returnMsg":output}
+        response = app.response_class(
+            response=json.dumps(ret_dict),
+            status=200,
+            mimetype='application/json'
+        )
+        return response
+    else:
+        status = 400
+        writeHandFile(apHandFilePath, 'fail_rollback')
+        ret_dict={"returnCode":status,"returnMsg":output}
+        response = app.response_class(
+            response=json.dumps(ret_dict),
+            status=400,
+            mimetype='application/json'
+        )
+        return response
 
 @app.route('/execute_table',methods=['GET', 'POST'])  #执行表脚本
 def executetable():
@@ -250,15 +178,113 @@ def executetable():
         with open('execute_table.error'.format(date=changeDate),'w') as f:
             f.write(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
 
-        resp = json.dumps({'returnCode':400,'returnMsg':'Table An Exception occured, more /etl/etldata/script/yatop_update/{date}/execute_table.error to see detail'.format(date=changeDate)})
+        resp = json.dumps({'returnCode':400,'returnMsg':'Table An Exception occured'+
+                                                        repr(traceback.format_exception(exc_type, exc_value, exc_traceback))})
         return resp.decode('utf-8').encode('utf-8')
 
     if eval(resp).get('returnCode') == 200:
-        writeHandFile(tableHandFilePath, 'success')
+        writeHandFile(tableHandFilePath, 'success_do')
     else:
-        writeHandFile(tableHandFilePath, 'failed')
+        writeHandFile(tableHandFilePath, 'fail_do')
 
     return resp.decode('utf-8').encode('utf-8')
+
+
+
+@app.route('/rollback_table',methods=['GET', 'POST'])  #执行回滚脚本
+def rollbacktable():
+
+    if request.method == 'POST':
+        a = request.get_data()
+        dict1 = json.loads(a)
+        changeDate = dict1['SMY_DT']
+        # dict1 = {"SMY_DT":"20170426"}
+        tableHandFilePath = '/etl/etldata/script/yatop_update/{date}/tableHandFile'.format(date=changeDate)
+        try:
+            resp = rollback_table.main(dict1)
+        except Exception:
+            print("failed")
+
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+
+            with open('rollback_table.error'.format(date=changeDate),'w') as f:
+                f.write(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+
+            resp = json.dumps({'returnCode':400, 'returnMsg':'RollbackTable An Exception occured'+
+                                                             repr(traceback.format_exception(exc_type, exc_value, exc_traceback))})
+            return resp.decode('utf-8').encode('utf-8')
+
+        if eval(resp).get('returnCode') == 200:
+            writeHandFile(tableHandFilePath, 'success_rollback')
+        else:
+            writeHandFile(tableHandFilePath, 'fail_rollback')
+
+        return resp.decode('utf-8').encode('utf-8')
+
+
+@app.route('/execute_job',methods=['GET', 'POST'])  #执行JOB脚本
+def executejob():
+    a = request.get_data()
+    dict1 = json.loads(a)
+    changeDate = dict1['date']
+
+    ## 创建握手文件
+    jobHandFilePath = '/etl/etldata/script/yatop_update/{date}/jobHandFile'.format(date=changeDate)
+
+    #writeHandFile(jobHandFilePath, 'waiting')
+
+    try:
+        resp = execute_job.main(changeDate)
+    except Exception:
+        print("failed")
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+
+        with open('execute_job.error'.format(date=changeDate),'w') as f:
+            f.write(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+
+        writeHandFile(jobHandFilePath, 'fail_do')
+
+        resp = json.dumps({'returnCode':400,'returnMsg':'Job An Exception occured'+
+                                                        repr(traceback.format_exception(exc_type, exc_value, exc_traceback))})
+        return resp.decode('utf-8').encode('utf-8')
+
+    print(eval(resp).get('returnCode'))
+    if eval(resp).get('returnCode') == 200:
+        writeHandFile(jobHandFilePath, 'success_do')
+    else:
+        writeHandFile(jobHandFilePath, 'fail_do')
+
+    return resp.decode('utf-8').encode('utf-8')
+
+
+
+@app.route('/rollback_job',methods=['GET', 'POST'])  #执行回滚脚本
+def rollbackjob():
+
+    if request.method == 'POST':
+        a = request.get_data()
+        dict1 = json.loads(a)
+        changeDate = dict1['date']
+
+        jobHandFilePath = '/etl/etldata/script/yatop_update/{date}/jobHandFile'.format(date=changeDate)
+
+        status, output = commands.getstatusoutput("sh /etl/etldata/script/yatop_update/"+changeDate+"/rollback_job.sh")
+        if status ==0 : #将执行成功默认是200,status的值为200,表示成功,需要转码
+            writeHandFile(jobHandFilePath, 'success_rollback')
+            status = 200
+            output = "回滚job成功"
+        else:
+            writeHandFile(jobHandFilePath, 'fail_rollback')
+            status = 400
+            output = "回滚job失败"
+        ret_dict={"returnCode":status,"returnMsg":output}
+        response = app.response_class(
+            response=json.dumps(ret_dict),
+            status=200,
+            mimetype='application/json'
+        )
+        return response
 
 
 @app.route('/getreadme',methods=['GET', 'POST'])#执行readMe脚本

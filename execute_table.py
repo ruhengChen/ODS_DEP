@@ -15,7 +15,7 @@ import codecs
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-software_version = 2.7
+software_version = 2.8
 print("start...")
 
 # conn = ibm_db.connect("DATABASE={DATABASE};HOSTNAME={HOSTNAME};PORT={PORT};PROTOCOL={PROTOCOL};UID={UID};PWD={PWD};".format(DATABASE=config.DATABASE, HOSTNAME=config.HOSTNAME, PORT=config.PORT, PROTOCOL=config.PROTOCOL, UID=config.UID, PWD=config.PWD), "", "")
@@ -139,41 +139,6 @@ def execute(date, file_name, guid):
             cursor_edw.commit()  ## 需要都没有问题后,一起提交,不然就回滚
             cursor_dwmm.commit()
 
-        #### DROP 表 ####
-        dropReg = re.compile(r'DROP TABLE (\w+\.\w+);')  ## 找出所有要Drop的表
-        dropList = re.findall(dropReg , data)
-        print(dropList)
-
-        for table in dropList:
-            try:
-                syscode, tablename = table.split('.')
-
-                sql = "DROP TABLE {tablenm};".format(tablenm=table)
-                execute_logFile.write(sql+'\n')
-
-                cursor_edw.execute(sql)
-
-                logSql = "INSERT INTO DSA.AUTOMATIC_LOG(SMY_DT, OPERATION, LST_TABNM, STATUS, PPN_TSTAMP, GUID) VALUES('{date}', 'DROP', '{tablenm}', 'EXECUTED', CURRENT TIMESTAMP, '{guid}')".format(date=date, tablenm=table, guid=guid)
-                cursor_dwmm.execute(logSql)
-                execute_logFile.write(logSql+'\n')
-
-                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_DW_T_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(date=date, syscode=syscode, tablename=tablename)
-
-                cursor_dwmm.execute(uptTableSql)
-
-                cursor_edw.commit()    ## 需要都没有问题后,一起提交,不然就回滚
-                cursor_dwmm.commit()
-                print("DROP TABLE {tablenm} success".format(tablenm=table))
-
-            except Exception:
-                print(sql)
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                with open('/etl/etldata/script/yatop_update/{date}/execute_table.error'.format(date=date), 'w') as f:
-                    f.write(repr(traceback.format_exception(exc_type, exc_value, exc_traceback))+'\n')
-                    f.write(sql)
-
-                print(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
-                return -1
 
         #### add column ####
         addColumnReg = re.compile(r'alter table (\w+.\.\w+) add column (\w+)\t(.*);')
@@ -294,6 +259,45 @@ def execute(date, file_name, guid):
                 print(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
                 return -1
 
+        #### DROP 表 ####
+        dropReg = re.compile(r'DROP TABLE (\w+\.\w+);')  ## 找出所有要Drop的表
+        dropList = re.findall(dropReg, data)
+        print(dropList)
+
+        for table in dropList:
+            try:
+                syscode, tablename = table.split('.')
+
+                sql = "DROP TABLE {tablenm};".format(tablenm=table)
+                execute_logFile.write(sql + '\n')
+
+                cursor_edw.execute(sql)
+
+                logSql = "INSERT INTO DSA.AUTOMATIC_LOG(SMY_DT, OPERATION, LST_TABNM, STATUS, PPN_TSTAMP, GUID) VALUES('{date}', 'DROP', '{tablenm}', 'EXECUTED', CURRENT TIMESTAMP, '{guid}')".format(
+                    date=date, tablenm=table, guid=guid)
+                cursor_dwmm.execute(logSql)
+                execute_logFile.write(logSql + '\n')
+
+                uptTableSql = "UPDATE DSA.ORGIN_TABLE_DETAIL_T SET IS_DW_T_F = '1' WHERE CHANGE_DATE = '{date}' AND SRC_STM_ID='{syscode}' AND TAB_CODE='{tablename}'".format(
+                    date=date, syscode=syscode, tablename=tablename)
+
+                cursor_dwmm.execute(uptTableSql)
+
+                cursor_edw.commit()  ## 需要都没有问题后,一起提交,不然就回滚
+                cursor_dwmm.commit()
+                print("DROP TABLE {tablenm} success".format(tablenm=table))
+
+            except Exception:
+                print(sql)
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                with open('/etl/etldata/script/yatop_update/{date}/execute_table.error'.format(date=date),
+                          'w') as f:
+                    f.write(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)) + '\n')
+                    f.write(sql)
+
+                print(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+                return -1
+
     return 0
 
 
@@ -309,6 +313,10 @@ def main(input_date, guid):
     global execute_logFile
 
     try:
+        if __name__ != "__main__":
+            if not guid:
+                raise Exception("guid is empty...")
+        print("guid: %s" %guid)
         con_edw = pyodbc.connect('DSN={edw_dsn}'.format(edw_dsn=config.edw_dsn))
         cursor_edw = con_edw.cursor()
 
@@ -320,15 +328,16 @@ def main(input_date, guid):
         print("input_date:%s" %input_date)
 
         ## 判断是否已经执行过
-        existSql = "SELECT COUNT(1) NM FROM DSA.AUTOMATIC_LOG WHERE SMY_DT>='{date}' and GUID='{guid}'".format(date=input_date, guid=guid)
-        cursor_dwmm.execute(existSql)
-        rows = cursor_dwmm.fetchone()
-        if rows.NM != 0:
-            print(u"execute_table error!\n请勿重复执行\n请先回滚后重新执行")
-            return_dict["returnCode"] = 400
-            return_dict["returnMsg"] = u'请勿重复执行\n 请先回滚后重新执行'
+        if __name__ != "__main__":
+            existSql = "SELECT COUNT(1) NM FROM DSA.AUTOMATIC_LOG WHERE SMY_DT>='{date}' and GUID='{guid}'".format(date=input_date, guid=guid)
+            cursor_dwmm.execute(existSql)
+            rows = cursor_dwmm.fetchone()
+            if rows.NM != 0:
+                print(u"execute_table error!\n请勿重复执行\n请先回滚后重新执行")
+                return_dict["returnCode"] = 400
+                return_dict["returnMsg"] = u'请勿重复执行\n 请先回滚后重新执行'
 
-            return json.dumps(return_dict, ensure_ascii=False)
+                return json.dumps(return_dict, ensure_ascii=False)
 
         if os.path.exists('/etl/etldata/script/yatop_update/{date}/execute_table.error'.format(date=input_date)):
             os.remove('/etl/etldata/script/yatop_update/{date}/execute_table.error'.format(date=input_date))
@@ -391,8 +400,17 @@ def main(input_date, guid):
 
 if __name__ == "__main__":
     print("start...")
-    input_date = raw_input('input_date:')
-    guid = raw_input('guid:')
+    guid = ""
+    input_date = sys.argv[1].strip()
+    # import uuid
+    # guid = str(uuid.uuid1())
+    # input_date = raw_input('input_date:')
+    # guid = raw_input('guid:')
+    print("input_date:", input_date)
     resp = main(input_date, guid)
     print(resp)
+
+    if eval(resp).get("returnCode") != 200:
+        print "error:", eval(resp).get("returnMsg")
+        exit(-1)
 
