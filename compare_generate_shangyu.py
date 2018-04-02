@@ -4,27 +4,28 @@
 重新改写compare
 """
 
-import codecs
 import glob
-import os
 # import ibm_db
 import pyodbc
 import re
-import shutil
-import stat
-import subprocess
 import sys
+import logging
+import os
+import codecs
 import time
-import traceback
-from collections import Counter
-
-from future.utils import raise_with_traceback
-
 import config
 import execute_ap
 import execute_job
 import execute_table
 import rollback_table
+import shutil
+from collections import Counter
+import stat
+import traceback
+import json
+import subprocess
+from future.utils import raise_with_traceback
+
 
 if config.VERSION == 2:
     reload(sys)
@@ -232,8 +233,8 @@ class CompareObj(object):
                     print("create ddl error %s" %table)
                     self._muti_outStream("create ddl error %s\n" %table)
 
-                    self._muti_outStream(output.decode('gb18030').encode('utf-8') + '\n')
-                    self.read_me_file.write(u"备份表结构错误%s:%s\n" %(table, output.decode('gb18030').encode('utf-8')))
+                    self._muti_outStream(output + '\n')
+                    self.read_me_file.write(u"备份表结构错误%s:%s\n" %(table, output))
                     ret = -1
                     break
         return ret
@@ -294,7 +295,7 @@ class CompareObj(object):
                 if status:
                     print("export %s error" % table)
                     self._muti_outStream(cmd)
-                    self._muti_outStream("export %s error, reason:%s" % (table, output))
+                    self._muti_outStream("export %s error" % table)
                     print(output)
 
                     self.read_me_file.write(u"备份%s 错误:%s\n" %(table, output))
@@ -390,8 +391,34 @@ class CompareObj(object):
         chk_sql = "SELECT COUNT(1) FROM ETL.JOB_METADATA WHERE JOB_NM = 'FTP_DOWNLOAD_%s'" %schema
         rows = self._getResultList(chk_sql)
         if rows[0][0] == 0:
-            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,SCHD_ENGIN_IP) VALUES ('FTP_DOWNLOAD_{schema}','DAY','FTP','FTP','{distribute_server_ip} {FTP_USER} {FTP_PWD} 21 DOWNLOAD','{distribute_server_path}{schema}/ADD/$dateid /etl/etldata/input/delta/{schema} {schema}_{BANK_ID}_$dateid_ADD.tar.Z {schema}_{BANK_ID}_$dateid_ADD.tar.Z','5','1','FTP_DOWNLOAD_{schema}','N',CURRENT TIMESTAMP,'1','1','{schema}','','{IP}');\n".format(schema=schema, distribute_server_ip= config.distribute_server_ip, distribute_server_path = config.distribute_server_path, BANK_ID = config.BANK_ID, IP =  config.IP, FTP_USER=config.FTP_USER, FTP_PWD = config.FTP_PWD))
-            self._muti_outStream("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD,PARAMS,PRIORITY,EST_WRKLD,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,SRC_SYS_ID,JOB_DESC,SCHD_ENGIN_IP) VALUES ('FTP_DOWNLOAD_{schema}','DAY','FTP','FTP','{distribute_server_ip} {FTP_USER} {FTP_PWD} 21 DOWNLOAD','{distribute_server_path}{schema}/ADD/$dateid /etl/etldata/input/delta/{schema} {schema}_{BANK_ID}_$dateid_ADD.tar.Z {schema}_{BANK_ID}_$dateid_ADD.tar.Z','5','1','FTP_DOWNLOAD_{schema}','N',CURRENT TIMESTAMP,'1','1','{schema}','','{IP}');\n".format(schema=schema, distribute_server_ip= config.distribute_server_ip, distribute_server_path = config.distribute_server_path, BANK_ID = config.BANK_ID, IP =  config.IP, FTP_USER=config.FTP_USER, FTP_PWD = config.FTP_PWD))
+            self.job_schedule_file.write("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD"
+                                         ",PARAMS,PRIORITY,EST_WRKLD,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,"
+                                         "SRC_SYS_ID,JOB_DESC,SCHD_ENGIN_IP) "
+                                         "VALUES ('FTP_DOWNLOAD_{schema}','DAY','FTP','FTP',"
+                                         "'{distribute_server_ip} {FTP_USER} {FTP_PWD} 21 DOWNLOAD',"
+                                         "'{distribute_server_path} {FTP_LOCAL_PATH} {schema}_{BANK_ID}_$dateid_ADD.tar.Z {schema}_{BANK_ID}_$dateid_ADD.tar.Z'"
+                                         ",'5','1','FTP_DOWNLOAD_{schema}','N',CURRENT TIMESTAMP,'1','1','{schema}','','{IP}');\n"
+                                         .format(FTP_LOCAL_PATH = config.FTP_LOCAL_PATH, schema=schema,
+                                                 distribute_server_ip= config.distribute_server_ip,
+                                                 distribute_server_path = config.distribute_server_path,
+                                                 BANK_ID = config.BANK_ID, IP = config.IP,
+                                                 FTP_USER=config.FTP_USER, FTP_PWD = config.FTP_PWD
+                                                 )
+                                         .format(schema=schema))
+            self._muti_outStream("INSERT INTO ETL.JOB_METADATA (JOB_NM,SCHD_PERIOD,JOB_TP,LOCATION,JOBCMD"
+                                         ",PARAMS,PRIORITY,EST_WRKLD,MTX_GRP,INIT_FLAG,PPN_TSTMP,INIT_BATCH_NO,MAX_BATCH_NO,"
+                                         "SRC_SYS_ID,JOB_DESC,SCHD_ENGIN_IP) "
+                                         "VALUES ('FTP_DOWNLOAD_{schema}','DAY','FTP','FTP',"
+                                         "'{distribute_server_ip} {FTP_USER} {FTP_PWD} 21 DOWNLOAD',"
+                                         "'{distribute_server_path} {FTP_LOCAL_PATH} {schema}_{BANK_ID}_$dateid_ADD.tar.Z {schema}_{BANK_ID}_$dateid_ADD.tar.Z'"
+                                         ",'5','1','FTP_DOWNLOAD_{schema}','N',CURRENT TIMESTAMP,'1','1','{schema}','','{IP}');\n"
+                                         .format(FTP_LOCAL_PATH = config.FTP_LOCAL_PATH, schema=schema,
+                                                 distribute_server_ip= config.distribute_server_ip,
+                                                 distribute_server_path = config.distribute_server_path,
+                                                 BANK_ID = config.BANK_ID, IP = config.IP,
+                                                 FTP_USER=config.FTP_USER, FTP_PWD = config.FTP_PWD
+                                                 )
+                                         .format(schema=schema))
 
         chk_sql = "SELECT COUNT(1) FROM ETL.JOB_SEQ WHERE JOB_NM = 'UNCOMPRESS_%s'" %schema
         rows = self._getResultList(chk_sql)
@@ -1903,6 +1930,8 @@ UNION ALL
             self._muti_outStream(u"输入日期:%s,%s\n" %(date_list[0], date_list[1]))
 
             if table_name:
+                if len(table_name.split(".")) != 2:
+                    raise Exception("tablename error! %s" % table_name)
                 table_list = table_name.split(',')
             else:
                 table_list = []
@@ -1956,14 +1985,14 @@ UNION ALL
             print(time.strftime('%Y-%m-%d %T', time.localtime())+ u"步骤四: 备份 生成 回滚程序")
             if config.isLinuxSystem():
                 ret = self.generate_rollback_ap(date_list[1])
-                # if ret:
-                #     return -1, u"备份ap错误"
-                # ret = self.generate_rollback_job(date_list[1])
-                # if ret:
-                #     return -1, u"备份Job错误"
-                # ret = self.generate_rollback_table(date_list[1])
-                # if ret:
-                #     return -1, u"备份表结构错误"
+                if ret:
+                    return -1, u"备份ap错误"
+                ret = self.generate_rollback_job(date_list[1])
+                if ret:
+                    return -1, u"备份Job错误"
+                ret = self.generate_rollback_table(date_list[1])
+                if ret:
+                    return -1, u"备份表结构错误"
 
             '''
                 步骤五: 查找数据修复表
@@ -1998,7 +2027,7 @@ UNION ALL
             ## 生成README_A
             if flag == "A":
                 schemaList = []
-                reg = re.compile(r'([a-zA-Z]+)\.([a-zA-Z]+)')
+                reg = re.compile(r'(\w+)\.(\w+)')
 
                 for schema, tablename in re.findall(reg,data):
                     schemaList.append(schema)

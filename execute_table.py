@@ -351,12 +351,12 @@ def main(input_date, guid):
 
         execute_logFile.write(input_date)
 
-        ret = validate_date(input_date)
-        if ret:
-            return_dict["returnCode"] = 400
-            return_dict["returnMsg"] = "the date is < max(date) in job_log"
-            execute_logFile.write(return_dict["returnMsg"]+'\n')
-            return json.dumps(return_dict)
+        # ret = validate_date(input_date)
+        # if ret:
+        #     return_dict["returnCode"] = 400
+        #     return_dict["returnMsg"] = "the date is < max(date) in job_log"
+        #     execute_logFile.write(return_dict["returnMsg"]+'\n')
+        #     return json.dumps(return_dict)
 
         if not os.path.exists(config.backup_path.format(date=input_date)):
             os.makedirs(config.backup_path.format(date=input_date))
